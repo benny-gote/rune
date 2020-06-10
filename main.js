@@ -68,6 +68,8 @@ function randomElement (arr){
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+canvas.height = window.innerHeight;
+canvas.width = window.innerWidth;
 const width = canvas.width, height = canvas.height;
 
 function rect(x,y,w,h){
@@ -85,53 +87,96 @@ function Color(r,g,b,a){
 }
 
 function random(a, b){
-  return Math.random() * a + (b - a);
+  return Math.random() * (b - a) + a;
 }
 
-function Rune (x, y, z, value){
+
+//********************************************************
+//noise section
+//********************************************************
+
+
+let perlin = new Perlin(2)
+
+
+//********************************************************
+
+//********************************************************
+let noiseScale = 20;
+
+let selectedColor = new Color(255, 248, 194, 100);
+function Rune (x, y, z, value, noiseOffset){
   this.x = x;
   this.y = y;
   this.z = z;
-  this.speed = z/10;
+  this.selected = false;
+  this.noiseOffset = noiseOffset;
+  this.noiseRate = z/6000;
+  this.home = {
+    x: -50,
+    y: y,
+  };
+  this.speed = z/10 + Math.random() * 5;
   this.value = value;
   this.c = new Color(194, 250, 254, (this.z/maxZ) * 100 + 20);
-  this.update = () => {
-    this.x += this.speed;
+  // this.c = new Color(255, 240, 255, (this.z/maxZ) * 100 + 20);
 
+  this.update = () => {
+    this.noiseOffset += this.noiseRate;
+    this.x += this.speed;
+    this.y += (perlin.noise(this.noiseOffset, 0, 0)* noiseScale) - noiseScale/2;
     if(this.x >= width+20){
       this.value = randomElement(chars);
-      this.x = -40;
+      this.x = this.home.x;
+      // this.y = this.home.y;
+      this.y = height * Math.random();
     }
   };
 
   this.render = () => {
-    ctx.fillStyle = this.c.v();
-    ctx.font = `${this.z}px Helvetica`;
-    ctx.fillText(this.value, this.x, this.y);
+    if(!this.selected){
+      ctx.fillStyle = this.c.v();
+      ctx.font = `${this.z}px Helvetica`;
+      ctx.fillText(this.value, this.x, this.y);
+    }else{
+      ctx.fillStyle = selectedColor.v();
+      ctx.font = `${this.z}px Helvetica`;
+      ctx.fillText(this.value, this.x, this.y);
+    }
+
+
   };
 
 }
 
-let maxZ = 50
+let maxZ = 60;
+let runeAmount = Math.ceil(0.000066 * (width * height));
+console.log(runeAmount);
 
 let runes = [];
-for(let i = 0; i < 50; i++){
+for(let i = 0; i < runeAmount; i++){
   runes.push(
     new Rune(
       Math.random()* width,
       Math.random()*height,
-      random(40, maxZ),
-      randomElement(chars))
+      random(20, maxZ),
+      randomElement(chars),
+      i*10)
     );
 }
 
+//runes[10].selected = true;
 // ctx.fillStyle="#420057";
-ctx.fillStyle="rgba(58, 32, 65, 1)"
+ctx.fillStyle="rgba(41, 12, 49, 1)"
 
 rect(0,0,width,height)
 
+let b = 0;
+
+//runtime call*********************************************************
+
 setInterval(() => {
-  ctx.fillStyle="rgba(58, 32, 65, 65%)";
+  ctx.fillStyle="rgba(41, 12, 49, 75%)";
   rect(0,0,width,height)
 
   // ctx.fillStyle="rgba(194, 250, 254, 1)";
@@ -139,4 +184,5 @@ setInterval(() => {
     item.update();
     item.render();
   })
+
 }, 25)
